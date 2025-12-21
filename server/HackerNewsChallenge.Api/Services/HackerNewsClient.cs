@@ -19,7 +19,7 @@ public sealed class HackerNewsClient : IHackerNewsClient
 
     public async Task<IReadOnlyList<long>> GetNewStoryIdsAsync(CancellationToken ct)
     {
-        IReadOnlyList<long> ItemIDs = await _http.GetFromJsonAsync<IReadOnlyList<long>>($"{_options.BaseUrl}/v0/newstories.json", ct);
+        var ItemIDs = await _http.GetFromJsonAsync<IReadOnlyList<long>>($"{_options.BaseUrl}/v0/newstories.json", ct);
 
         if (ItemIDs == null)
         {
@@ -31,7 +31,7 @@ public sealed class HackerNewsClient : IHackerNewsClient
 
     public async Task<HackerNewsItem?> GetItemAsync(long id, CancellationToken ct)
     {
-        HackerNewsItem? Item = await _http.GetFromJsonAsync<HackerNewsItem>($"{_options.BaseUrl}/v0/item/{id}.json");
+        var Item = await _http.GetFromJsonAsync<HackerNewsItem>($"{_options.BaseUrl}/v0/item/{id}.json", ct);
 
         return Item;
     }
