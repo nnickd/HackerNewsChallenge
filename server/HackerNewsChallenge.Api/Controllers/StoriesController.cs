@@ -15,7 +15,6 @@ public sealed class StoriesController : ControllerBase
         _stories = stories;
     }
 
-    // GET /api/stories/newest?page=1&pageSize=20&query=angular
     [HttpGet("newest")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<StoryDto>>> GetNewest(
