@@ -104,31 +104,73 @@
         }
     }
 
-    ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
+    .story-list {
+        position: relative;
+        transition: filter 0.2s ease;
 
-        li {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            padding: 5px 0;
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
 
-            &:hover {
-                background: rgba(255, 255, 255, 0.04);
-            }
+            li {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 5px 0;
 
-            .story-link {
-                max-width: 60%;
-            }
+                &:hover {
+                    background: rgba(255, 255, 255, 0.04);
+                }
 
-            .story-details {
-                .story-date {
-                    color: #6ee7b7;
+                .story-link {
+                    max-width: 60%;
+                }
+
+                .story-details {
+                    .story-date {
+                        color: #6ee7b7;
+                    }
                 }
             }
         }
-    }
 
+        &.no-stories {
+            display: flex;
+            align-items: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 70vh;
+        }
+
+        &.crt-loading {
+            filter: contrast(1.1) brightness(1.05);
+
+            &::before {
+                content: "";
+                pointer-events: none;
+                position: absolute;
+                inset: 0;
+                background:
+                    repeating-linear-gradient(to bottom,
+                        rgba(255, 255, 255, 0.04),
+                        rgba(255, 255, 255, 0.04) 1px,
+                        transparent 1px,
+                        transparent 3px);
+                mix-blend-mode: overlay;
+                opacity: 0.25;
+            }
+
+            &::after {
+                content: "";
+                pointer-events: none;
+                position: absolute;
+                inset: 0;
+                background: radial-gradient(ellipse at center,
+                        rgba(110, 231, 183, 0.15),
+                        transparent 60%);
+                opacity: 0.3;
+            }
+        }
+    }
 }

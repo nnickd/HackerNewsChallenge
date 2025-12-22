@@ -12,33 +12,34 @@
         </div>
     </div>
 
-    @if (loading) {
-    <p>Loading stories…</p>
-    } @else if (error) {
-    <p class="error">{{ error }}</p>
-    } @else {
-        @defer {
-        @if (stories.length > 0) {
-        <ul>
-            @for (s of stories; track s.id) {
-            <li>
-                <div class="story-link">
-                    <a [href]="s.link" target="_blank" rel="noopener noreferrer">
-                        {{ s.title }}
-                    </a>
-                </div>
-                <div class="story-details">
-                    @if (s.by) { <span>{{ s.by }}</span> }
-                    <span> <span class="story-date"> @</span> {{ s.createdAt | date:'short' }}</span>
-                </div>
-            </li>
-            }
-        </ul>
+    <div class="story-list" [class.crt-loading]="loading" [class.no-stories]="!stories.length">
+        @if (loading && !stories.length) {
+            <p>Loading stories…</p>
+        } @else if (error) {
+            <p class="error">{{ error }}</p>
         } @else {
-        <p>No stories found.</p>
+            @if (stories.length > 0) {
+                <ul>
+                    @for (s of stories; track s.id) {
+                        <li>
+                            <div class="story-link">
+                                <a [href]="s.link" target="_blank" rel="noopener noreferrer">
+                                    {{ s.title }}
+                                </a>
+                            </div>
+                            <div class="story-details">
+                                @if (s.by) { 
+                                    <span>{{ s.by }}</span> 
+                                }
+                                <span> <span class="story-date"> @</span> {{ s.createdAt | date:'short' }}</span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            } 
+            @else {
+                <p>No stories found.</p>
+            }
         }
-        } @placeholder {
-        <p>Preparing stories…</p>
-        }
-    }
+    </div>
 </div>
