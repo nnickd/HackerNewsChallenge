@@ -1,0 +1,44 @@
+<div class="stories">
+    <h1>Hacker News</h1>
+
+    <div class="controls">
+        <input type="text" placeholder="Search stories..." [(ngModel)]="query"
+            (ngModelChange)="onSearchChange($event)" />
+
+        <div class="paging">
+            <button (click)="prev()" [disabled]="page <= 1 || loading">Prev</button>
+            <span>Page {{ page }}</span>
+            <button (click)="next()" [disabled]="loading || stories.length < pageSize">Next</button>
+        </div>
+    </div>
+
+    @if (loading) {
+    <p>Loading stories…</p>
+    } @else if (error) {
+    <p class="error">{{ error }}</p>
+    } @else {
+        @defer {
+        @if (stories.length > 0) {
+        <ul>
+            @for (s of stories; track s.id) {
+            <li>
+                <div class="story-link">
+                    <a [href]="s.link" target="_blank" rel="noopener noreferrer">
+                        {{ s.title }}
+                    </a>
+                </div>
+                <div class="story-details">
+                    @if (s.by) { <span>{{ s.by }}</span> }
+                    <span> <span class="story-date"> @</span> {{ s.createdAt | date:'short' }}</span>
+                </div>
+            </li>
+            }
+        </ul>
+        } @else {
+        <p>No stories found.</p>
+        }
+        } @placeholder {
+        <p>Preparing stories…</p>
+        }
+    }
+</div>
