@@ -1,6 +1,7 @@
 ﻿using HackerNewsChallenge.Api.Models.HackerNews;
 using HackerNewsChallenge.Api.Models.Stories;
 using HackerNewsChallenge.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Caching.Memory;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -33,74 +34,58 @@ public sealed class StoryService : IStoryService
         string? query,
         CancellationToken ct)
     {
-        query = query?.Trim();
         var ids = await GetCachedNewStoryIdsAsync(ct);
+
+        return string.IsNullOrWhiteSpace(query)
+             ? await GetPagedNewestStoriesAsync(page, pageSize, ids, ct)
+             : await SearchNewestStoriesAsync(page, pageSize, ids, query!, ct);
+    }
+
+    private async Task<PagedResult<StoryDto>> GetPagedNewestStoriesAsync(int page, int pageSize, IReadOnlyList<long> ids, CancellationToken ct)
+    {
         var items = new List<HackerNewsItem>();
+        int skip = (page - 1) * pageSize;
+        var idx = skip;
 
-
-        if (string.IsNullOrEmpty(query))
+        while (idx < ids.Count && items.Count < pageSize)
         {
-            int skip = (page - 1) * pageSize;
-            var idx = skip;
-
-            while (idx < ids.Count && items.Count < pageSize)
+            var item = await GetCachedItemAsync(ids[idx], ct);
+            if (item is not null)
             {
-                var item = await GetCachedItemAsync(ids[idx], ct);
-                if (item is not null)
-                {
-                    items.Add(item);
-                }
-
-                idx++;
+                items.Add(item);
             }
 
-            return new PagedResult<StoryDto>()
-            {
-                Page = page,
-                PageSize = pageSize,
-                Total = ids.Count,
-                Items = items.Select(MapToDto).ToList()
-            };
+            idx++;
         }
 
+        return new PagedResult<StoryDto>()
+        {
+            Page = page,
+            PageSize = pageSize,
+            Total = ids.Count,
+            Items = items.Select(MapToDto).ToList()
+        };
+    }
+
+    private async Task<PagedResult<StoryDto>> SearchNewestStoriesAsync(int page, int pageSize, IReadOnlyList<long> ids, string query, CancellationToken ct)
+    {
+        var items = new List<HackerNewsItem>();
         int matchesToSkip = (page - 1) * pageSize;
         var matchesSkipped = 0;
-        var queryParts = query.Split(" ", StringSplitOptions.RemoveEmptyEntries).Select(x => TokenTrimRegex.Replace(x, "")).Where(x => x.Length > 0).ToArray();
+        var queryParts = query
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => TokenTrimRegex.Replace(x, ""))
+                        .Where(x => x.Length > 0)
+                        .ToArray();
 
         for (var idx = 0; idx < ids.Count && items.Count < pageSize; idx++)
         {
             var item = await GetCachedItemAsync(ids[idx], ct);
-            if (item?.Title is null)
-            {
-                continue;
-            }
+            if (item?.Title is null) continue;
 
-            var titleParts = item.Title.Split(" ", StringSplitOptions.RemoveEmptyEntries).Select(x => TokenTrimRegex.Replace(x, "")).Where(x => x.Length > 0);
-            var matches = false;
+            var matches = TitleMatchesQuery(item.Title, queryParts);
 
-            foreach (var titlePart in titleParts)
-            {
-                foreach (var queryPart in queryParts)
-                {
-                    matches = queryPart.Length <= 3
-                            ? titlePart.Equals(queryPart, StringComparison.OrdinalIgnoreCase)
-                            : titlePart.Contains(queryPart, StringComparison.OrdinalIgnoreCase);
-                    if (matches)
-                    {
-                        break;
-                    }
-                }
-
-                if (matches)
-                {
-                    break;
-                }
-            }
-
-            if (!matches)
-            {
-                continue;
-            }
+            if (!matches) continue;
 
             if (matchesSkipped < matchesToSkip)
             {
@@ -118,6 +103,30 @@ public sealed class StoryService : IStoryService
             Total = matchesSkipped + items.Count,
             Items = items.Select(MapToDto).ToList()
         };
+    }
+
+    private static bool TitleMatchesQuery(string title, string[] queryParts)
+    {
+        var titleParts = title.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        var matches = false;
+        foreach (var tp in titleParts)
+        {
+            var titlePart = TokenTrimRegex.Replace(tp, "");
+            if (titlePart.Length == 0) continue;
+
+            foreach (var queryPart in queryParts)
+            {
+                matches = queryPart.Length <= 3
+                        ? titlePart.Equals(queryPart, StringComparison.OrdinalIgnoreCase)
+                        : titlePart.Contains(queryPart, StringComparison.OrdinalIgnoreCase);
+                if (matches) break;
+            }
+
+            if (matches) break;
+        }
+
+        return matches;
     }
 
     private async Task<IReadOnlyList<long>> GetCachedNewStoryIdsAsync(CancellationToken ct)
