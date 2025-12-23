@@ -1,10 +1,9 @@
 ﻿using HackerNewsChallenge.Api.Models.HackerNews;
 using HackerNewsChallenge.Api.Models.Stories;
 using HackerNewsChallenge.Api.Services.Interfaces;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Caching.Memory;
-using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Collections.Concurrent;
 
 namespace HackerNewsChallenge.Api.Services;
 
@@ -21,6 +20,8 @@ public sealed class StoryService : IStoryService
 
     private readonly IHackerNewsClient _hn;
     private readonly IMemoryCache _cache;
+
+    private const int MaxConcurrency = 10;
 
     public StoryService(IHackerNewsClient hn, IMemoryCache cache)
     {
@@ -47,15 +48,22 @@ public sealed class StoryService : IStoryService
         int skip = (page - 1) * pageSize;
         var idx = skip;
 
+        var windowSize = pageSize * 4;
+
         while (idx < ids.Count && items.Count < pageSize)
         {
-            var item = await GetCachedItemAsync(ids[idx], ct);
-            if (item is not null)
+            var windowIds = ids.Skip(skip).Take(windowSize).ToArray();
+            if (windowIds.Length == 0) break;
+
+            var fetchedItems = await FetchWindowAsync(windowIds, ct);
+
+            foreach (var item in fetchedItems)
             {
+                if (items.Count >= pageSize) break;
                 items.Add(item);
             }
 
-            idx++;
+            idx += windowIds.Length;
         }
 
         return new PagedResult<StoryDto>()
@@ -78,22 +86,32 @@ public sealed class StoryService : IStoryService
                         .Where(x => x.Length > 0)
                         .ToArray();
 
-        for (var idx = 0; idx < ids.Count && items.Count < pageSize; idx++)
+        var idx = 0;
+        var windowSize = pageSize * 6;
+        
+        while (idx < ids.Count && items.Count < pageSize)
         {
-            var item = await GetCachedItemAsync(ids[idx], ct);
-            if (item?.Title is null) continue;
+            var windowIds = ids.Skip(idx).Take(windowSize).ToArray();
+            if (windowIds.Length == 0) break;
 
-            var matches = TitleMatchesQuery(item.Title, queryParts);
+            var fetchedItems = await FetchWindowAsync(windowIds, ct);
 
-            if (!matches) continue;
-
-            if (matchesSkipped < matchesToSkip)
+            foreach (var item in fetchedItems)
             {
-                matchesSkipped++;
-                continue;
+                if (item?.Title is null) continue;
+                if (!TitleMatchesQuery(item.Title, queryParts)) continue;
+
+                if (matchesSkipped < matchesToSkip)
+                {
+                    matchesSkipped++;
+                    continue;
+                }
+
+                items.Add(item);
+                if (items.Count >= pageSize) break;
             }
 
-            items.Add(item);
+            idx += windowIds.Length;
         }
 
         return new PagedResult<StoryDto>
@@ -127,6 +145,37 @@ public sealed class StoryService : IStoryService
         }
 
         return matches;
+    }
+
+    private async Task<List<HackerNewsItem>> FetchWindowAsync(IReadOnlyList<long> ids, CancellationToken ct)
+    {
+        var bag = new ConcurrentBag<HackerNewsItem>();
+
+        await Parallel.ForEachAsync(
+            ids,
+            new ParallelOptions { MaxDegreeOfParallelism = MaxConcurrency, CancellationToken = ct },
+            async (id, token) =>
+            {
+                var item = await GetCachedItemAsync(id, token);
+                if (item is not null)
+                {
+                    bag.Add(item);
+                }
+            }
+        );
+
+        var bagDict = bag.ToDictionary(x => x.Id);
+        var sortedItems = new List<HackerNewsItem>();
+
+        foreach (var id in ids)
+        {
+            if (bagDict.TryGetValue(id, out var item))
+            {
+                sortedItems.Add(item); 
+            }
+        }
+
+        return sortedItems;
     }
 
     private async Task<IReadOnlyList<long>> GetCachedNewStoryIdsAsync(CancellationToken ct)
