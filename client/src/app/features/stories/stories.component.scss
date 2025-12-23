@@ -136,8 +136,14 @@
                 }
 
                 .story-details {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: flex-end;
+                    align-items: center;
+                    opacity: 0.5;
                     .story-date {
                         color: #6ee7b7;
+                        margin: 0 10px;
                     }
                 }
             }

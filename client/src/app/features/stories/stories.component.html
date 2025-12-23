@@ -1,8 +1,15 @@
-<div class="stories">
+<div 
+    class="stories" 
+    appKeyboardShortcuts 
+    [shortcutsDisabled]="loading" 
+    [focusTarget]="searchInput" 
+    (prevPage)="prev()" 
+    (nextPage)="next()"
+    (escape)="onEscape()">
     <h1>Hacker News</h1>
 
     <div class="controls">
-        <input type="text" placeholder="Search stories..." [(ngModel)]="query"
+        <input #searchInput type="text" placeholder="Search stories..." [(ngModel)]="query"
             (ngModelChange)="onSearchChange($event)" />
 
         <div class="paging">
@@ -12,7 +19,7 @@
         </div>
     </div>
 
-    <div class="story-list" [class.crt-loading]="loading" [class.no-stories]="!stories.length">
+    <div class="story-list" [class.crt-loading]="loading" [class.no-stories]="!stories.length || error">
         @if (loading && !stories.length) {
             <p>Loading stories…</p>
         } @else if (error) {
@@ -33,7 +40,8 @@
                                 @if (s.by) { 
                                     <span>{{ s.by }}</span> 
                                 }
-                                <span> <span class="story-date"> @</span> {{ s.createdAt | date:'short' }}</span>
+                                <span class="story-date">@</span>
+                                <span>{{ s.createdAt | date:'short' }}</span>
                             </div>
                         </li>
                     }

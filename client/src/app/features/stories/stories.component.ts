@@ -3,15 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subject, catchError, of, tap } from 'rxjs';
 
-import { StoriesService } from '../../services/stories/stories.service';
-import { Story } from '../../models/story.model';
-import { PagedResult } from '../../models/paged-result.model';
-import { HighlightPipe } from '../../pipes/highlight-pipe';
+import { StoriesService } from './stories.service';
+import { Story } from './stories.model';
+import { PagedResult } from '../../shared/models/paged-result.model';
+import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
+import { KeyboardShortcuts } from '../../shared/directives/keyboard-shortcuts';
 
 @Component({
   selector: 'app-stories',
   standalone: true,
-  imports: [CommonModule, FormsModule, HighlightPipe],
+  imports: [CommonModule, FormsModule, HighlightPipe, KeyboardShortcuts],
   templateUrl: './stories.component.html',
   styleUrl: './stories.component.scss',
 })
@@ -82,5 +83,11 @@ export class StoriesComponent implements OnInit {
     if (this.stories.length < this.pageSize) return;
     this.page++;
     this.load();
+  }
+
+  onEscape(): void {
+    if (!this.query.trim()) return;
+    this.query = '';
+    this.onSearchChange('');
   }
 }
