@@ -6,6 +6,13 @@
     max-width: 1000px;
     margin: 0 auto;
 
+    .highlight {
+        background: rgba(110, 231, 183, 0.18);
+        color: #a7f3d0;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
+
     .controls {
         display: flex;
         flex-direction: row;
@@ -88,22 +95,6 @@
 
     }
 
-    a {
-        color: #6ee7b7;
-        text-decoration: none;
-        transition: color 0.15s ease, text-shadow 0.15s ease;
-
-        &:hover {
-            color: #a7f3d0;
-            text-shadow: 0 0 4px rgba(110, 231, 183, 0.4);
-        }
-
-        &:focus-visible {
-            outline: 2px dashed #6ee7b7;
-            outline-offset: 2px;
-        }
-    }
-
     .story-list {
         position: relative;
         transition: filter 0.2s ease;
@@ -123,8 +114,25 @@
                     background: rgba(255, 255, 255, 0.04);
                 }
 
-                .story-link {
+                .story-title {
                     max-width: 60%;
+
+                    a {
+                        color: #6ee7b7;
+                        text-decoration: none;
+                        transition: color 0.15s ease, text-shadow 0.15s ease;
+                        white-space: pre-wrap;
+
+                        &:hover {
+                            color: #a7f3d0;
+                            text-shadow: 0 0 4px rgba(110, 231, 183, 0.4);
+                        }
+
+                        &:focus-visible {
+                            outline: 2px dashed #6ee7b7;
+                            outline-offset: 2px;
+                        }
+                    }
                 }
 
                 .story-details {

@@ -6,11 +6,12 @@ import { debounceTime, distinctUntilChanged, Subject, catchError, of, tap } from
 import { StoriesService } from '../../services/stories/stories.service';
 import { Story } from '../../models/story.model';
 import { PagedResult } from '../../models/paged-result.model';
+import { HighlightPipe } from '../../pipes/highlight-pipe';
 
 @Component({
   selector: 'app-stories',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HighlightPipe],
   templateUrl: './stories.component.html',
   styleUrl: './stories.component.scss',
 })
@@ -34,7 +35,7 @@ export class StoriesComponent implements OnInit {
 
     this.query$
       .pipe(
-        debounceTime(350),
+        debounceTime(600),
         distinctUntilChanged(),
         tap(() => {
           this.page = 1;

@@ -22,9 +22,11 @@
                 <ul>
                     @for (s of stories; track s.id) {
                         <li>
-                            <div class="story-link">
+                            <div class="story-title">
                                 <a [href]="s.link" target="_blank" rel="noopener noreferrer">
-                                    {{ s.title }}
+                                      @for (part of (s.title | highlight: query); track $index) {
+                                        <span [class.highlight]="part.match">{{ part.text }}</span>
+                                      }
                                 </a>
                             </div>
                             <div class="story-details">

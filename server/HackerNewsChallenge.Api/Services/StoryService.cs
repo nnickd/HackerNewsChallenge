@@ -2,6 +2,8 @@
 using HackerNewsChallenge.Api.Models.Stories;
 using HackerNewsChallenge.Api.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace HackerNewsChallenge.Api.Services;
 
@@ -13,6 +15,8 @@ public sealed class StoryService : IStoryService
     private const string HackerNewsItemCacheKeyPrefix = "hn:item";
     private static readonly TimeSpan HackerNewsItemTtl = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan MissingItemTtl = TimeSpan.FromMinutes(10);
+
+    private static readonly Regex TokenTrimRegex = new(@"^[^\w]+|[^\w]+$", RegexOptions.Compiled);
 
     private readonly IHackerNewsClient _hn;
     private readonly IMemoryCache _cache;
@@ -61,15 +65,38 @@ public sealed class StoryService : IStoryService
 
         int matchesToSkip = (page - 1) * pageSize;
         var matchesSkipped = 0;
+        var queryParts = query.Split(" ", StringSplitOptions.RemoveEmptyEntries).Select(x => TokenTrimRegex.Replace(x, "")).Where(x => x.Length > 0).ToArray();
+
         for (var idx = 0; idx < ids.Count && items.Count < pageSize; idx++)
         {
             var item = await GetCachedItemAsync(ids[idx], ct);
-            if (item is null)
+            if (item?.Title is null)
             {
                 continue;
             }
 
-            var matches = item.Title?.Contains(query!, StringComparison.OrdinalIgnoreCase) ?? false;
+            var titleParts = item.Title.Split(" ", StringSplitOptions.RemoveEmptyEntries).Select(x => TokenTrimRegex.Replace(x, "")).Where(x => x.Length > 0);
+            var matches = false;
+
+            foreach (var titlePart in titleParts)
+            {
+                foreach (var queryPart in queryParts)
+                {
+                    matches = queryPart.Length <= 3
+                            ? titlePart.Equals(queryPart, StringComparison.OrdinalIgnoreCase)
+                            : titlePart.Contains(queryPart, StringComparison.OrdinalIgnoreCase);
+                    if (matches)
+                    {
+                        break;
+                    }
+                }
+
+                if (matches)
+                {
+                    break;
+                }
+            }
+
             if (!matches)
             {
                 continue;
@@ -129,8 +156,8 @@ public sealed class StoryService : IStoryService
 
     private static bool IsValidStory(HackerNewsItem? item)
     {
-        return item is not null 
-            && item.Type == "story" 
+        return item is not null
+            && item.Type == "story"
             && item.Dead != true
             && item.Deleted != true
             && item.Title?.Trim().Length > 0;
