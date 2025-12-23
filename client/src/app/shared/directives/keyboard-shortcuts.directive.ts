@@ -4,7 +4,7 @@ import { Directive, HostListener, Input, EventEmitter, Output } from '@angular/c
   selector: '[appKeyboardShortcuts]',
   standalone: true
 })
-export class KeyboardShortcuts {
+export class KeyboardShortcutsDirective {
   @Input() focusTarget?: HTMLInputElement;
   @Input() shortcutsDisabled = false;
 

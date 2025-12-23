@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subject, catchError, of, tap } from 'rxjs';
@@ -7,12 +7,12 @@ import { StoriesService } from './stories.service';
 import { Story } from './stories.model';
 import { PagedResult } from '../../shared/models/paged-result.model';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
-import { KeyboardShortcuts } from '../../shared/directives/keyboard-shortcuts';
+import { KeyboardShortcutsDirective } from '../../shared/directives/keyboard-shortcuts.directive';
 
 @Component({
   selector: 'app-stories',
   standalone: true,
-  imports: [CommonModule, FormsModule, HighlightPipe, KeyboardShortcuts],
+  imports: [CommonModule, FormsModule, HighlightPipe, KeyboardShortcutsDirective],
   templateUrl: './stories.component.html',
   styleUrl: './stories.component.scss',
 })
@@ -28,6 +28,9 @@ export class StoriesComponent implements OnInit {
   error: string | null = null;
 
   private readonly query$ = new Subject<string>();
+  
+  @ViewChild('searchInput')
+  private searchInput?: ElementRef<HTMLInputElement>;
 
   constructor(private readonly storiesService: StoriesService) { }
 
@@ -86,8 +89,11 @@ export class StoriesComponent implements OnInit {
   }
 
   onEscape(): void {
-    if (!this.query.trim()) return;
-    this.query = '';
-    this.onSearchChange('');
+    if (this.query) {
+      this.query = '';
+      this.onSearchChange('');
+    }
+
+    this.searchInput?.nativeElement.blur();
   }
 }
