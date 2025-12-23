@@ -5,12 +5,16 @@ import { Directive, HostListener, Input, EventEmitter, Output } from '@angular/c
   standalone: true
 })
 export class KeyboardShortcutsDirective {
-  @Input() focusTarget?: HTMLInputElement;
   @Input() shortcutsDisabled = false;
 
+  @Output() focusTarget = new EventEmitter<void>();
   @Output() prevPage = new EventEmitter<void>();
   @Output() nextPage = new EventEmitter<void>();
+  @Output() nextItem = new EventEmitter<void>();
+  @Output() prevItem = new EventEmitter<void>();
   @Output() escape = new EventEmitter<void>();
+  @Output() control = new EventEmitter<void>();
+  
 
 
   constructor() { }
@@ -29,8 +33,9 @@ export class KeyboardShortcutsDirective {
 
     if (!isTypingContext && evt.key == '/') {
       evt.preventDefault();
-      this.focusTarget?.focus();
-      this.focusTarget?.select();
+      this.focusTarget.emit();
+      // this.focusTarget?.focus();
+      // this.focusTarget?.select();
       return;
     }
 
@@ -48,6 +53,24 @@ export class KeyboardShortcutsDirective {
     if (!isTypingContext && evt.key == 'ArrowRight') {
       evt.preventDefault();
       this.nextPage.emit();
+      return;
+    }
+
+    if (evt.key == 'Control') {
+      evt.preventDefault();
+      this.control.emit();
+      return;
+    }
+
+    if (evt.key == 'ArrowUp') {
+      evt.preventDefault();
+      this.prevItem.emit();
+      return;
+    }
+
+    if (evt.key == 'ArrowDown') {
+      evt.preventDefault();
+      this.nextItem.emit();
       return;
     }
   }

@@ -2,10 +2,13 @@
     class="stories" 
     appKeyboardShortcuts 
     [shortcutsDisabled]="loading" 
-    [focusTarget]="searchInput" 
-    (prevPage)="prev()" 
-    (nextPage)="next()"
-    (escape)="onEscape()">
+    (focusTarget)="focusInput()" 
+    (prevPage)="prevPage()" 
+    (nextPage)="nextPage()"
+    (nextItem)="onNextItem()"
+    (prevItem)="onPrevItem()"
+    (escape)="onEscape()"
+    (control)="onControl()">
     <h1>Hacker News</h1>
 
     <div class="controls">
@@ -13,9 +16,9 @@
             (ngModelChange)="onSearchChange($event)" />
 
         <div class="paging">
-            <button (click)="prev()" [disabled]="page <= 1 || loading">Prev</button>
+            <button (click)="prevPage()" [disabled]="page <= 1 || loading">Prev</button>
             <span>Page {{ page }}</span>
-            <button (click)="next()" [disabled]="loading || stories.length < pageSize">Next</button>
+            <button (click)="nextPage()" [disabled]="loading || stories.length < pageSize">Next</button>
         </div>
     </div>
 
@@ -27,10 +30,17 @@
         } @else {
             @if (stories.length > 0) {
                 <ul>
-                    @for (s of stories; track s.id) {
+                    @for (s of stories; track s.id; let idx = $index) {
                         <li>
                             <div class="story-title">
-                                <a [href]="s.link" target="_blank" rel="noopener noreferrer">
+                                <span class="story-score"><{{ s.score ?? 0 }}></span>
+                                <a 
+                                   #storyLink 
+                                   [href]="s.link" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   [attr.tabindex]="idx === activeIdx ? 0 : -1"
+                                   [class.active]="idx === activeIdx && itemNav">
                                       @for (part of (s.title | highlight: query); track $index) {
                                         <span [class.highlight]="part.match">{{ part.text }}</span>
                                       }

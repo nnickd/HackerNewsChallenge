@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subject, catchError, of, tap } from 'rxjs';
@@ -27,10 +27,18 @@ export class StoriesComponent implements OnInit {
   loading = false;
   error: string | null = null;
 
+  activeIdx = -1;
+  itemNav = false;
+
   private readonly query$ = new Subject<string>();
   
   @ViewChild('searchInput')
   private searchInput?: ElementRef<HTMLInputElement>;
+  
+  @ViewChildren('storyLink')
+  private storyLinks!: QueryList<ElementRef<HTMLAnchorElement>>;
+
+  private _pendingFocus: 'first' | 'last' | null = null;
 
   constructor(private readonly storiesService: StoriesService) { }
 
@@ -50,6 +58,7 @@ export class StoriesComponent implements OnInit {
   }
 
   onSearchChange(value: string): void {
+    this.toggleItemName(false);
     this.query$.next(value);
   }
 
@@ -62,6 +71,21 @@ export class StoriesComponent implements OnInit {
         this.total = res.total;
         this.stories = res.items;
         this.loading = false;
+
+        if (this._pendingFocus) {
+          if (this._pendingFocus == 'first') {
+            this.activeIdx = 0;
+          } 
+          else {
+            this.activeIdx = Math.max(0, this.stories.length - 1);
+          }
+
+          this._pendingFocus = null;
+        }
+        
+        if (this.itemNav) {
+          setTimeout(() => this.focusIdx(this.activeIdx), 10);
+        }
       }),
       catchError(err => {
         this.loading = false;
@@ -76,24 +100,85 @@ export class StoriesComponent implements OnInit {
     ).subscribe();
   }
 
-  prev(): void {
+  prevPage(): void {
     if (this.page <= 1) return;
     this.page--;
     this.load();
   }
 
-  next(): void {
+  nextPage(): void {
     if (this.stories.length < this.pageSize) return;
     this.page++;
     this.load();
   }
 
+  focusInput(): void {
+    this.toggleItemName(false);
+    this.searchInput?.nativeElement.focus();
+    this.searchInput?.nativeElement.select();
+  }
+
   onEscape(): void {
+    this.toggleItemName(false);
     if (this.query) {
       this.query = '';
       this.onSearchChange('');
     }
 
     this.searchInput?.nativeElement.blur();
+  }
+
+  onControl(): void {
+    this.toggleItemName(false, true);
+    this.searchInput?.nativeElement.blur();
+  }
+
+  onPrevItem(): void {
+    this.toggleItemName(true);
+    if (this.activeIdx > 0) {
+      this.focusIdx(this.activeIdx - 1);
+      return;
+    }
+
+    if (this.page <= 1 || this.loading) {
+      return;
+    }
+ 
+    this._pendingFocus = 'last';
+    this.page--;
+    this.load();
+  }
+
+  onNextItem(): void {
+    this.toggleItemName(true);
+    const lastIdx = this.stories.length - 1;
+
+    if (this.activeIdx < lastIdx) {
+      this.focusIdx(this.activeIdx + 1);
+      return;
+    }
+
+    if (this.stories.length != this.pageSize || this.loading) return;
+
+    this._pendingFocus = 'first';
+    this.page++;
+    this.load();
+  }
+
+  private focusIdx(idx: number) {
+    const links = this.storyLinks.toArray();
+    if (!links.length) return;
+
+    const clampedIdx = Math.max(0, Math.min(idx, links.length - 1));
+    this.activeIdx = clampedIdx;
+
+    queueMicrotask(() => links[this.activeIdx]?.nativeElement.focus());
+  }
+
+  private toggleItemName(active: boolean, keepActive: boolean = false) {
+    this.itemNav = active;
+    if (!active && !keepActive) {
+      this.activeIdx = -1;
+    } 
   }
 }

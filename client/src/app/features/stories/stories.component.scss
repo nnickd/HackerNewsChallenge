@@ -3,7 +3,7 @@
     flex-direction: column;
     gap: 12px;
     padding: 16px;
-    max-width: 1000px;
+    max-width: 70vw;
     margin: 0 auto;
 
     .highlight {
@@ -116,12 +116,24 @@
 
                 .story-title {
                     max-width: 60%;
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+
+                    .story-score {
+                        min-width: 6ch;
+                        text-align: right;
+                        margin: 0 1ch 0 -7ch;
+                        opacity: 0.3;
+                        color: inherit;
+                    }
 
                     a {
                         color: #6ee7b7;
                         text-decoration: none;
                         transition: color 0.15s ease, text-shadow 0.15s ease;
                         white-space: pre-wrap;
+                        padding: 2px;
 
                         &:hover {
                             color: #a7f3d0;
@@ -129,9 +141,16 @@
                         }
 
                         &:focus-visible {
-                            outline: 2px dashed #6ee7b7;
-                            outline-offset: 2px;
+                            outline: none;
                         }
+
+                        &.active {
+                            background: rgba(110, 231, 183, 0.08);
+                            box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.25);
+                            border-radius: 4px;
+                            outline: 2px solid #6ee7b7;
+                        }
+
                     }
                 }
 
