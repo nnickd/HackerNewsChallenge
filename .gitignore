@@ -1,8 +1,23 @@
 .vs/
-bin/
-obj/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.DS_Store
 
 client/node_modules/
 client/dist/
-.vscode/
-.angular/
+client/.angular/
+client/coverage/
+
+server/**/wwwroot/**
+!server/**/wwwroot/.gitkeep
+
+**/bin/
+**/obj/
+**/TestResults/
+**/*.csproj.user
+
+*.log
