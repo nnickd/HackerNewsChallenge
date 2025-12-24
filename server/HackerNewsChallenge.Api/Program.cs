@@ -1,12 +1,13 @@
 using HackerNewsChallenge.Api.Configuration;
 using HackerNewsChallenge.Api.Services;
 using HackerNewsChallenge.Api.Services.Interfaces;
-using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddMemoryCache();
 
 builder.Services.Configure<HackerNewsOptions>(
@@ -17,18 +18,33 @@ builder.Services.AddScoped<IStoryService, StoryService>();
 
 var app = builder.Build();
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+var spaRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "browser");
 
-app.UseDefaultFiles();
-app.UseStaticFiles();
+if (Directory.Exists(spaRoot))
+{
+    var fileProvider = new PhysicalFileProvider(spaRoot);
+
+    app.UseDefaultFiles(new DefaultFilesOptions
+    {
+        FileProvider = fileProvider
+    });
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = fileProvider
+    });
+}
 
 app.UseHttpsRedirection();
 
 app.MapControllers();
 
-app.MapFallbackToFile("index.html");
+if (Directory.Exists(spaRoot))
+{
+    app.MapFallbackToFile("index.html", new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(spaRoot)
+    });
+}
 
 app.Run();
