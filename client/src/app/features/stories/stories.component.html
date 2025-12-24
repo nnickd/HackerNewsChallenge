@@ -21,8 +21,8 @@
         </div>
     </div>
 
-    <div class="story-list" [class.crt-loading]="loading" [class.no-stories]="!stories.length || error">
-        @if (loading && !stories.length) {
+    <div class="story-list" [class.crt-loading]="showLoading" [class.no-stories]="!stories.length || error">
+        @if (showLoading && !stories.length) {
             <p>Loading stories…</p>
         } @else if (error) {
             <p class="error">{{ error }}</p>
@@ -32,7 +32,7 @@
                     @for (s of stories; track s.id; let idx = $index) {
                         <li>
                             <div class="story-title">
-                                <span class="story-score"><{{ s.score ?? 0 }}></span>
+                                <span class="story-score">&lt;{{ s.score ?? 0 }}&gt;</span>
                                 <a 
                                    #storyLink 
                                    [href]="s.link" 
@@ -56,7 +56,7 @@
                     }
                 </ul>
             } 
-            @else {
+            @else if (!loading) {
                 <p>No stories found.</p>
             }
         }

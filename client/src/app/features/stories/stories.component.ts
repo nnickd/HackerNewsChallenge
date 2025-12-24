@@ -27,14 +27,17 @@ export class StoriesComponent implements OnInit {
   loading = false;
   error: string | null = null;
 
+  showLoading = false;
+  private showLoadingTimer: number | null = null;
+
   activeIdx = -1;
   itemNav = false;
 
   private readonly query$ = new Subject<string>();
-  
+
   @ViewChild('searchInput')
   private searchInput?: ElementRef<HTMLInputElement>;
-  
+
   @ViewChildren('storyLink')
   private storyLinks!: QueryList<ElementRef<HTMLAnchorElement>>;
 
@@ -64,31 +67,49 @@ export class StoriesComponent implements OnInit {
 
   load(): void {
     this.loading = true;
+    this.showLoading = false;
     this.error = null;
+
+    if (this.showLoadingTimer != null) {
+      clearTimeout(this.showLoadingTimer);
+      this.showLoadingTimer = null;
+    }
+
+    this.showLoadingTimer = setTimeout(() => {
+      if (this.loading) this.showLoading = true;
+    }, 150);
 
     this.storiesService.getNewest(this.page, this.pageSize, this.query).pipe(
       tap(res => {
+        this.loading = false;
+        this.showLoading = false;
         this.total = res.total;
         this.stories = res.items;
-        this.loading = false;
 
         if (this._pendingFocus) {
           if (this._pendingFocus == 'first') {
             this.activeIdx = 0;
-          } 
+          }
           else {
             this.activeIdx = Math.max(0, this.stories.length - 1);
           }
 
           this._pendingFocus = null;
         }
-        
+
         if (this.itemNav) {
           setTimeout(() => this.focusIdx(this.activeIdx));
         }
       }),
       catchError(err => {
         this.loading = false;
+        this.showLoading = false;
+        
+        if (this.showLoadingTimer != null) {
+          clearTimeout(this.showLoadingTimer);
+          this.showLoadingTimer = null;
+        }
+        
         this.error = 'Failed to load stories.';
         return of({
           page: this.page,
@@ -138,7 +159,7 @@ export class StoriesComponent implements OnInit {
     if (this.page <= 1 || this.loading) {
       return;
     }
- 
+
     this._pendingFocus = 'last';
     this.page--;
     this.load();
@@ -174,6 +195,6 @@ export class StoriesComponent implements OnInit {
     this.itemNav = active;
     if (!active && !keepActive) {
       this.activeIdx = -1;
-    } 
+    }
   }
 }
