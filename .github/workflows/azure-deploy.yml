@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: client/package-lock.json
 
@@ -24,13 +24,13 @@ jobs:
         working-directory: client
         run: npm ci
 
-      - name: Build Angular into API wwwroot (uses package.json script)
+      - name: Build Angular into API wwwroot
         working-directory: client
         run: npm run build:server
 
       - name: Test client
         working-directory: client
-        run: npm test -- --watch=false
+        run: npm test -- --watch=false --browsers=ChromeHeadless
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -41,10 +41,10 @@ jobs:
         run: dotnet restore HackerNewsChallenge.sln
 
       - name: Test server
-        run: dotnet test HackerNewsChallenge.sln --configuration Release --no-build
+        run: dotnet test HackerNewsChallenge.sln --configuration Release
 
       - name: Publish API
-        run: dotnet publish server/HackerNewsChallenge.Api/HackerNewsChallenge.Api.csproj -c Release -o publish
+        run: dotnet publish server/HackerNewsChallenge.Api/HackerNewsChallenge.Api.csproj -c Release -o publish -p:UseAppHost=false
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
