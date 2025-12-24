@@ -34,12 +34,11 @@ export class KeyboardShortcutsDirective {
     if (!isTypingContext && evt.key == '/') {
       evt.preventDefault();
       this.focusTarget.emit();
-      // this.focusTarget?.focus();
-      // this.focusTarget?.select();
       return;
     }
 
     if (evt.key == 'Escape') {
+      evt.preventDefault();
       this.escape.emit();
       return;
     }
@@ -56,13 +55,7 @@ export class KeyboardShortcutsDirective {
       return;
     }
 
-    if (evt.key == 'Control') {
-      evt.preventDefault();
-      this.control.emit();
-      return;
-    }
-
-    if (evt.key == 'ArrowUp') {
+    if (!isTypingContext && evt.key == 'ArrowUp') {
       evt.preventDefault();
       this.prevItem.emit();
       return;

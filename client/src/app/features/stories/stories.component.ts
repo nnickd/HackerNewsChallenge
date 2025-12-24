@@ -58,7 +58,7 @@ export class StoriesComponent implements OnInit {
   }
 
   onSearchChange(value: string): void {
-    this.toggleItemName(false);
+    this.toggleItemNav(false);
     this.query$.next(value);
   }
 
@@ -84,7 +84,7 @@ export class StoriesComponent implements OnInit {
         }
         
         if (this.itemNav) {
-          setTimeout(() => this.focusIdx(this.activeIdx), 10);
+          setTimeout(() => this.focusIdx(this.activeIdx));
         }
       }),
       catchError(err => {
@@ -113,13 +113,13 @@ export class StoriesComponent implements OnInit {
   }
 
   focusInput(): void {
-    this.toggleItemName(false);
+    this.toggleItemNav(false);
     this.searchInput?.nativeElement.focus();
     this.searchInput?.nativeElement.select();
   }
 
   onEscape(): void {
-    this.toggleItemName(false);
+    this.toggleItemNav(false, true);
     if (this.query) {
       this.query = '';
       this.onSearchChange('');
@@ -128,13 +128,8 @@ export class StoriesComponent implements OnInit {
     this.searchInput?.nativeElement.blur();
   }
 
-  onControl(): void {
-    this.toggleItemName(false, true);
-    this.searchInput?.nativeElement.blur();
-  }
-
   onPrevItem(): void {
-    this.toggleItemName(true);
+    this.toggleItemNav(true);
     if (this.activeIdx > 0) {
       this.focusIdx(this.activeIdx - 1);
       return;
@@ -150,7 +145,7 @@ export class StoriesComponent implements OnInit {
   }
 
   onNextItem(): void {
-    this.toggleItemName(true);
+    this.toggleItemNav(true);
     const lastIdx = this.stories.length - 1;
 
     if (this.activeIdx < lastIdx) {
@@ -175,7 +170,7 @@ export class StoriesComponent implements OnInit {
     queueMicrotask(() => links[this.activeIdx]?.nativeElement.focus());
   }
 
-  private toggleItemName(active: boolean, keepActive: boolean = false) {
+  private toggleItemNav(active: boolean, keepActive: boolean = false) {
     this.itemNav = active;
     if (!active && !keepActive) {
       this.activeIdx = -1;
