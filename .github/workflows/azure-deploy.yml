@@ -1,0 +1,54 @@
+name: Build and deploy to Azure Web App
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client deps
+        working-directory: client
+        run: npm ci
+
+      - name: Build Angular into API wwwroot (uses package.json script)
+        working-directory: client
+        run: npm run build:server
+
+      - name: Test client
+        working-directory: client
+        run: npm test -- --watch=false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore HackerNewsChallenge.sln
+
+      - name: Test server
+        run: dotnet test HackerNewsChallenge.sln --configuration Release --no-build
+
+      - name: Publish API
+        run: dotnet publish server/HackerNewsChallenge.Api/HackerNewsChallenge.Api.csproj -c Release -o publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: publish
